@@ -1,0 +1,75 @@
+Still to do:
+7. Write Upfor Part III (Javadoc & UML Created).
+9. Allow incoming connections (Fix SocketListener).
+
+Optimistic, unnecessary tasks:
+12.Create a log file.  	
+25.Put download speed and upload speed calculations on timers, that only execute like once every 5 seconds, 
+   or better yet, when it is time to choke a peer to death.
+
+GUI TODO: (Unnecessary):
+x. Why does it say "We're interested in: Uninterested," unchoked, and their upload speed is not falling like peers we no longer need pieces from? 
+	I think this readout might be incorrect.
+x. Make "Pieces:" bold text. (Jonas being OCD)
+x. Align peers' pieces correctly. (Jonas being OCD)
+x. Rotate Window 90 degrees (Jonas being OCD)
+
+Performance Issues from Rob:
+- CPU utilization very high >100%
+- SocketListener.java should eliminate go()
+- Tracker sends event=started for non-start announces
+* Many methods (esp. in Tracker) change the values of instance 
+  variables without documenting it. **From Jonas: Since I wasn't involved in the original coding of this, I am hoping someone else can handle it**
+
+Completed, but may need to discuss:
+-. Documentation (See 7)
+-. The upload rate of a peer should drop to 0 once we finish downloading with them.  
+	**This has been solved by adding two lines into the Peer.disconnect() method. (this.downloadSpeed = 0; and this.uploadSpeed = 0;)
+	*To do this, we need to have the Peer still executing code, into which it could update the variable "end," which stores 
+	System.currentTimeInMillis(), which we need to divide amount of data received by in order to get upload rates. *
+-. In the PrioritizePieces method in Performance analyzer, ensure that pieces we no longer need are removed from the pool of pieces we test
+-. Move "start = System.currentTimeMillis();" from managerPeerConnection in MessageHandler to a method that executes
+	(in MessageHandler) before an unchoke message is sent.
+-. Something goes wrong with last piece, if you listen to audio it cuts out for last 15 seconds 
+	-(NOT ANYMORE! MD5SUM VERIFIES!! - still cuts out on odd note, but it's right.) 
+	-We now allocate exactly the right amount of space (10,776,576).
+	-The Manager verifies the hash on the last piece. 
+	-Still having an issue getting mp3 where file doesn't cut off. 
+	-I will check the checksum in a bit and update this if it checks out that we do have the whole file. 
+
+Completed:
+-. Take appropriate steps if the manager.verifyPiece(piece) returns false. This is line 468 in MessageHandler.
+-. Calculate piece rarity before each request message. **IN getNeededPieceIndex**
+-. Ensure we are sending the upload statistics across all sessions to the tracker. 
+-. Ensure no more than 6 peers are currently connected. Ensure Optimistic Choking only runs when >= 3 peers are connected.
+-. Create a pool of currently unconnected peers. 
+-. From this pool of unconnected peers choose one randomly to connect to after the slowest is disconnected.
+-. Ensure PrioritizePieces gets a good bitfield, and is able to process it. Currently, p.getBitfield() is not being parsed/read correctly. 
+	** The parameter "bitfield" in Peer is only the INITIAL bitfield the peer sends after the handshake; we probably shouldn't even
+		hold on to that info cause it just makes things confusing, but at this point other code depends on it. 
+	    "bitfield" in Peers, should NEVER be accessed. The actual pieces a peer has is stored in an array list called available pieces.
+		 That being said, I changed the code in PerformanceAnalyzer to use availablePieces instead. ** (UNTESTED)
+-. Create a mechanism whereby the pieces are downloaded in a prioritized manner. (See 11)
+-. Get CPU down to 10% ideally.
+-. Ensure tracker is updating every 120 seconds, rather than 120 milliseconds. 
+	** The line we use is: Thread.sleep(1000 * this.getInterval()); ---> ie sleep for(1000 * xMilliseconds) = sleep for(xSeconds). Are you sure this is wrong?
+-. Change the bitfield print messages to "Peer x has pieces 1,2,,5,45."
+-. Get uploaded numbers worked out, so there is no doubling every time we run. 
+-. Queue choke messages.
+-. Queue unchoke messages.
+-. Trackerstats always gives me incorrect information (Dylan) **Since I am not sure what you meant, I'm not positive it is fixed, but it should contain all correct info now.**
+-. Check out RunTimeCommands; it's actually just operating on the thread Manager gets called on.. do we even need a new thread? 
+		**Yes, we do. If the user types quiet, rather than quit, it needs to loop back** Even if it didn't what do we have to lose by having a separate thread?**
+-. Change code so everything goes through message queue
+-. Implement Runtime Commands
+-. Start shutting down everything once quit is entered (I got this). (Runtime.addShutdownHook(Thread))
+-. Get uploads functional (Manager must handle a list of requesting Peers)
+-. Pick up where we left off
+-. Reverifying piece on resume, which is dumb, but apparently we have to do it. 
+-. Changing while(download not complete) loops to while(user hasn't quit) loops.
+-. Write Up
+-. Bitfield Messages
+-. Accepting Incoming Connections
+-. Tracker Statistics 
+
+
